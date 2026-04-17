@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Investidor Mestre 3.0 — Google Ads Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06090f;--sf:#0c1220;--cd:#111a2e;--bd:#1a2744;--g:#00e599;--b:#4d8eff;--p:#a47cff;--y:#ffbe2e;--r:#ff4d6a;--c:#2ee5c9;--t:#e2e8f0;--d:#8899b4;--m:#4a5d80}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t);font-family:'DM Sans',system-ui,sans-serif}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--sf)}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 16px}
+.header{text-align:center;margin-bottom:28px}
+.badge{display:inline-block;padding:3px 12px;background:rgba(0,229,153,.1);border:1px solid rgba(0,229,153,.2);border-radius:20px;font-size:10px;color:var(--g);font-weight:600;letter-spacing:1px;margin-bottom:10px;text-transform:uppercase}
+h1{font-size:28px;font-weight:900;letter-spacing:-1px}h1 span{color:var(--g)}
+.subtitle{color:var(--d);font-size:13px;margin-top:6px}
+.meta{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:8px}
+.meta span{font-size:10px;color:var(--m)}
+.meta button{padding:4px 12px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;color:var(--d);font-size:10px;cursor:pointer;font-family:inherit}
+.meta button:hover{background:var(--cd)}
+.tabs{display:flex;gap:3px;margin-bottom:28px;justify-content:center;flex-wrap:wrap}
+.tab{padding:6px 14px;font-size:11px;font-weight:500;color:var(--d);background:var(--sf);border:1px solid var(--bd);border-radius:20px;cursor:pointer;font-family:inherit;transition:.2s}
+.tab.active{font-weight:700;color:var(--bg);background:var(--g);border-color:var(--g)}
+.tab:hover:not(.active){background:var(--cd)}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.kpi{background:linear-gradient(135deg,var(--cd),var(--sf));border:1px solid var(--bd);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden}
+.kpi .bar{position:absolute;top:0;left:0;right:0;height:3px}
+.kpi .label{font-size:10px;color:var(--d);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:500}
+.kpi .value{font-size:26px;font-weight:800;line-height:1}
+.kpi .sub{font-size:11px;color:var(--m);margin-top:5px}
+.card{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:20px}
+.sec{margin-bottom:16px;margin-top:32px}
+.sec h2{font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px}
+.sec p{font-size:12px;color:var(--d);margin:4px 0 0 28px}
+.box{border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:12px;line-height:1.6;border-left:3px solid}
+.box.i{background:rgba(0,61,41,.3);border-color:var(--g)}
+.box.w{background:rgba(61,40,0,.3);border-color:var(--y)}
+.box.d{background:rgba(61,0,21,.3);border-color:var(--r)}
+.box.a{background:rgba(26,16,64,.3);border-color:var(--p)}
+table{width:100%;font-size:11px;border-collapse:collapse}
+th{text-align:right;padding:7px 6px;color:var(--m);font-size:9px;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid var(--bd)}
+th:first-child{text-align:left}
+td{padding:8px 6px;text-align:right;border-bottom:1px solid rgba(26,39,68,.15)}
+td:first-child{text-align:left;font-weight:600}
+.status{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600}
+.comp{display:grid;gap:10px;margin-bottom:20px}
+.comp-card{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:16px;text-align:center}
+.page{display:none}.page.active{display:block}
+.footer{text-align:center;margin-top:40px;padding:20px;border-top:1px solid var(--bd)}
+.footer div{font-size:10px;color:var(--m)}
+.loading{display:flex;align-items:center;justify-content:center;min-height:80vh;flex-direction:column;gap:16px}
+.loading .spinner{width:40px;height:40px;border:3px solid var(--bd);border-top-color:var(--g);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error{text-align:center;max-width:400px;margin:100px auto;padding:40px}
+.error button{margin-top:16px;padding:10px 24px;background:var(--g);color:var(--bg);border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;font-family:inherit}
+canvas{max-height:320px}
+@media(max-width:768px){.grid2,.comp{grid-template-columns:1fr}.wrap{padding:16px 10px}h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="loading">
+    <div class="spinner"></div>
+    <div style="color:var(--g);font-size:16px;font-weight:700">Carregando dados da planilha...</div>
+    <div style="color:var(--d);font-size:12px">Conectando ao Google Sheets</div>
+  </div>
+</div>
+
+<script>
+// ============ CONFIG ============
+const SHEET_ID="10eM89DK8v0IPjUjGlaB_AP88Y9TfvpUZoHZdVBAe2NE";
+const csvUrl=sheet=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
+
+const fK=n=>"R$"+(n/1000).toFixed(1)+"k";
+const fR=n=>"R$"+Math.round(n).toLocaleString("pt-BR");
+const rc=r=>r>=2.5?"#00e599":r>=1.5?"#4d8eff":r>=1?"#ffbe2e":"#ff4d6a";
+const lc=l=>l>=0?"#00e599":"#ff4d6a";
+const sc=s=>{if(!s)return"#4a5d80";const l=s.toLowerCase();return l.includes("venc")?"#00e599":l.includes("prom")?"#4d8eff":l.includes("break")?"#ffbe2e":l.includes("perd")?"#ff4d6a":"#4a5d80"};
+const cols=["#00e599","#4d8eff","#a47cff","#ffbe2e","#ff4d6a","#2ee5c9","#ff6bb5","#6366f1","#f97316","#14b8a6"];
+Chart.defaults.color="#8899b4";Chart.defaults.borderColor="#1a2744";Chart.defaults.font.family="'DM Sans',system-ui";
+
+let charts={},mensal=[],campanhas=[],vendas=[],currentTab="overview";
+
+async function fetchData(){
+  try{
+    const[mR,cR,vR]=await Promise.all([fetch(csvUrl("Looker Mensal")),fetch(csvUrl("Looker Campanhas")),fetch(csvUrl("Looker Vendas"))]);
+    if(!mR.ok||!cR.ok||!vR.ok)throw new Error("Planilha não acessível");
+    const[mT,cT,vT]=await Promise.all([mR.text(),cR.text(),vR.text()]);
+    const parse=csv=>Papa.parse(csv,{header:true,skipEmptyLines:true,dynamicTyping:true}).data;
+    mensal=parse(mT).filter(r=>r.Vendas>0).map(r=>({m:r["Mês"]||"",v:+(r.Vendas||0),inv:+(r.Investido||0),com:+(r["Comissão"]||r.Comissao||0),lu:+(r["Lucro Bruto"]||0),roas:+(r.ROAS||0),cpa:+(r.CPA||0),ano:String(r.Ano||"")}));
+    campanhas=parse(cT).map(r=>({mes:r["Mês"]||"",ano:String(r.Ano||""),c:r.Campanha||"",tipo:r.Tipo||"",v:+(r.Vendas||0),cpa:+(r.CPA||0),cu:+(r.Custo||0),co:+(r["Comissão"]||r.Comissao||0),lu:+(r.Lucro||0),roas:+(r.ROAS||0),st:r.Status||"",bud:r["Budget/Dia"]||""}));
+    vendas=parse(vT).map(r=>({mes:r["Mês"]||"",ano:String(r.Ano||""),camp:r.Campanha||"",tipo:r.Tipo||"",ad:r["AD/Criativo"]||"",com:+(r["Comissão"]||r.Comissao||0),cidade:r.Cidade||"",estado:r.Estado||"",regiao:r["Região"]||r.Regiao||""}));
+    render();
+  }catch(e){
+    document.getElementById("app").innerHTML=`<div class="error"><div style="font-size:32px">⚠️</div><div style="color:#ff4d6a;font-size:16px;font-weight:700;margin:12px 0">Erro ao carregar</div><div style="color:#8899b4;font-size:13px;line-height:1.6;margin-bottom:16px">${e.message}</div><div style="color:#8899b4;font-size:12px;line-height:1.6;background:#111a2e;padding:16px;border-radius:10px;text-align:left"><strong style="color:#e2e8f0">Para resolver:</strong><br>1. Abra a planilha no Google Sheets<br>2. Arquivo → Compartilhar → Publicar na web<br>3. Documento inteiro → Publicar<br>4. Recarregue esta página</div><button onclick="location.reload()">Tentar novamente</button></div>`;
+  }
+}
+
+function render(){
+  const totV=mensal.reduce((s,r)=>s+r.v,0),totI=mensal.reduce((s,r)=>s+r.inv,0),totC=mensal.reduce((s,r)=>s+r.com,0),totL=mensal.reduce((s,r)=>s+r.lu,0),roasG=totI>0?totC/totI:0;
+  const m26=mensal.filter(r=>r.ano==="2026"),v26=m26.reduce((s,r)=>s+r.v,0),l26=m26.reduce((s,r)=>s+r.lu,0);
+  const meses26=[...new Set(campanhas.filter(r=>r.ano==="2026").map(r=>r.mes))].filter(Boolean);
+  let acum=0;const acumArr=mensal.map(r=>{acum+=r.lu;return acum});
+
+  // Geo
+  const geoMap={};vendas.forEach(r=>{if(r.estado)geoMap[r.estado]=(geoMap[r.estado]||0)+1});
+  const geoArr=Object.entries(geoMap).map(([e,v])=>({e,v})).sort((a,b)=>b.v-a.v).slice(0,10);
+  const regMap={};vendas.forEach(r=>{if(r.regiao)regMap[r.regiao]=(regMap[r.regiao]||0)+1});
+  const regArr=Object.entries(regMap).map(([n,v])=>({n,v})).sort((a,b)=>b.v-a.v);
+
+  // Tipos
+  const tipoMap={};campanhas.forEach(r=>{const t=r.tipo||"Outros";if(!tipoMap[t])tipoMap[t]={v:0,cu:0,co:0,lu:0};tipoMap[t].v+=r.v;tipoMap[t].cu+=r.cu;tipoMap[t].co+=r.co;tipoMap[t].lu+=r.lu});
+  const tipoArr=Object.entries(tipoMap).map(([t,d])=>({t,...d,roas:d.cu>0?d.co/d.cu:0})).sort((a,b)=>b.v-a.v);
+
+  const tabs=[{id:"overview",l:"Visão Geral"},...meses26.map(m=>({id:m,l:m.split("/")[0]})),{id:"tipos",l:"Por Tipo"},{id:"geo",l:"Geo"}];
+
+  function kpi(label,value,sub,color="#00e599"){return`<div class="kpi"><div class="bar" style="background:linear-gradient(90deg,${color},transparent)"></div><div class="label">${label}</div><div class="value" style="color:${color}">${value}</div>${sub?`<div class="sub">${sub}</div>`:""}</div>`}
+  function sec(icon,title,sub){return`<div class="sec"><h2>${icon} ${title}</h2>${sub?`<p>${sub}</p>`:""}</div>`}
+  function box(type,text){return`<div class="box ${type}">${text}</div>`}
+  function campTable(data,title){let h=`<div class="card">${title?`<div style="font-size:13px;font-weight:700;margin-bottom:12px">${title}</div>`:""}<table><thead><tr><th style="text-align:left">Campanha</th><th>Tipo</th><th>Vendas</th><th>Custo</th><th>Lucro</th><th>ROAS</th><th>Status</th></tr></thead><tbody>`;data.forEach(r=>{h+=`<tr><td>${r.c}</td><td style="font-size:10px;color:#8899b4">${r.tipo||""}</td><td style="font-weight:700">${r.v}</td><td style="color:#8899b4">${fK(r.cu)}</td><td style="font-weight:700;color:${lc(r.lu)}">${fK(r.lu)}</td><td style="font-weight:800;color:${rc(r.roas)};font-size:12px">${r.roas.toFixed(2)}</td><td><span class="status" style="background:${sc(r.st)}20;color:${sc(r.st)}">${r.st}</span></td></tr>`});return h+"</tbody></table></div>"}
+
+  let pages="";
+
+  // OVERVIEW
+  pages+=`<div class="page active" id="p-overview"><div class="grid4">${kpi("Vendas ("+mensal.length+" meses)",totV.toLocaleString("pt-BR"),"Investido: "+fK(totI))}${kpi("Lucro Bruto",fK(totL),"Comissão: "+fK(totC),"#4d8eff")}${kpi("ROAS Geral",roasG.toFixed(2),"CPA: "+fR(totV>0?totI/totV:0),"#a47cff")}${kpi("Vendas 2026",v26.toLocaleString("pt-BR"),"Lucro: "+fK(l26),"#2ee5c9")}</div>${sec("📈","Evolução Mensal","Vendas, Lucro e ROAS")}<div class="card"><canvas id="ch-evo"></canvas></div>${sec("💰","Lucro Acumulado")}<div class="card"><canvas id="ch-acum"></canvas></div>${sec("🏆","Comparativo 2026")}<div class="comp" style="grid-template-columns:repeat(${m26.length},1fr)">${m26.map((d,i)=>`<div class="comp-card"><div style="font-size:11px;font-weight:700;color:${cols[i]};margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${d.m.split("/")[0]}</div><div style="font-size:28px;font-weight:900">${d.v}</div><div style="font-size:10px;color:#4a5d80">vendas</div><div style="margin-top:8px;font-size:20px;font-weight:800;color:${rc(d.roas)}">${d.roas.toFixed(2)}</div><div style="font-size:9px;color:#4a5d80">ROAS</div><div style="margin-top:6px;font-size:10px;color:#8899b4">Lucro: ${fK(d.lu)}</div></div>`).join("")}</div></div>`;
+
+  // MESES INDIVIDUAIS
+  meses26.forEach(mes=>{
+    const cp=campanhas.filter(r=>r.mes===mes).sort((a,b)=>b.v-a.v);
+    const md=mensal.find(r=>r.m===mes)||{v:0,roas:0,inv:0,lu:0,com:0,cpa:0};
+    const mv=vendas.filter(r=>r.mes===mes);
+    const win=cp.filter(r=>r.roas>=2&&r.v>=3);
+    const lose=cp.filter(r=>r.roas>0&&r.roas<1&&r.v>0);
+    const paused=cp.filter(r=>r.v===0&&r.cu>0);
+    pages+=`<div class="page" id="p-${mes}"><div class="grid4">${kpi("Vendas",md.v.toString(),"CPA: "+fR(md.cpa))}${kpi("ROAS",md.roas.toFixed(2),"Investido: "+fK(md.inv),"#4d8eff")}${kpi("Lucro",fK(md.lu),"Comissão: "+fK(md.com),"#00e599")}${kpi("Campanhas",cp.length.toString(),win.length+" venc · "+lose.length+" perd","#a47cff")}</div>${campTable(cp,"Campanhas — "+mes)}${win.length?box("i","🧠 <strong>Vencedoras:</strong> "+win.map(w=>w.c+" ("+w.roas.toFixed(2)+")").join(" · ")):""}${lose.length?box("d","🔴 <strong>Prejuízo:</strong> "+lose.map(l=>l.c+" ("+l.roas.toFixed(2)+", "+fK(l.lu)+")").join(" · ")):""}${paused.length?box("w","⚠️ <strong>Pausadas:</strong> "+paused.map(p=>p.c+" ("+fK(p.cu)+")").join(" · ")):""}${cp.filter(r=>r.v>0).length>1?`<div class="card"><canvas id="ch-${mes.replace(/\//g,"")}"></canvas></div>`:""}</div>`;
+  });
+
+  // TIPOS
+  let tt=`<div class="card"><table><thead><tr><th style="text-align:left">Tipo</th><th>Vendas</th><th>Custo</th><th>Comissão</th><th>Lucro</th><th>ROAS</th></tr></thead><tbody>`;
+  tipoArr.forEach((r,i)=>{tt+=`<tr><td style="color:${cols[i%10]};font-weight:700">${r.t}</td><td style="font-weight:700">${r.v}</td><td style="color:#8899b4">${fK(r.cu)}</td><td style="color:#8899b4">${fK(r.co)}</td><td style="font-weight:700;color:${lc(r.lu)}">${fK(r.lu)}</td><td style="font-weight:800;color:${rc(r.roas)};font-size:13px">${r.roas.toFixed(2)}</td></tr>`});
+  tt+="</tbody></table></div>";
+  pages+=`<div class="page" id="p-tipos">${sec("📊","Por Tipo de Campanha","Agregado completo")}<div class="card"><canvas id="ch-tipos"></canvas></div>${tt}</div>`;
+
+  // GEO
+  pages+=`<div class="page" id="p-geo">${sec("📍","Vendas por Estado",vendas.length+" vendas rastreadas")}<div class="grid2"><div class="card"><canvas id="ch-geo"></canvas></div><div class="card"><div style="font-size:12px;font-weight:700;margin-bottom:12px">Por Região</div><canvas id="ch-reg" style="max-height:200px"></canvas></div></div><div class="card">${geoArr.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:5px 0"><span style="width:24px;font-size:11px;font-weight:700;color:${cols[i%10]}">${r.e}</span><div style="flex:1;height:6px;background:#1a2744;border-radius:3px;overflow:hidden"><div style="width:${geoArr[0].v>0?(r.v/geoArr[0].v*100):0}%;height:100%;background:${cols[i%10]};border-radius:3px"></div></div><span style="font-size:11px;font-weight:600;min-width:28px;text-align:right">${r.v}</span></div>`).join("")}</div></div>`;
+
+  // RENDER
+  document.getElementById("app").innerHTML=`<div class="header"><div class="badge">Google Ads Analytics · Live</div><h1>Investidor Mestre <span>3.0</span></h1><p class="subtitle">${mensal.length} meses · ${totV} vendas · ${vendas.length} rastreadas</p><div class="meta"><span>Atualizado: ${new Date().toLocaleString("pt-BR")}</span><button onclick="location.reload()">↻ Atualizar</button></div></div><div class="tabs" id="tabs">${tabs.map(t=>`<button class="tab${t.id==="overview"?" active":""}" data-id="${t.id}">${t.l}</button>`).join("")}</div><div id="pages">${pages}</div><div class="footer"><div>Dashboard Investidor Mestre 3.0 · Dados atualizados da planilha Google Sheets</div></div>`;
+
+  document.querySelectorAll(".tab").forEach(btn=>{btn.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));btn.classList.add("active");document.getElementById("p-"+btn.dataset.id).classList.add("active");currentTab=btn.dataset.id;renderCharts()})});
+
+  function renderCharts(){
+    Object.values(charts).forEach(c=>{if(c&&c.destroy)c.destroy()});charts={};
+    const id=currentTab;
+
+    if(id==="overview"){
+      charts.evo=new Chart(document.getElementById("ch-evo"),{type:"bar",data:{labels:mensal.map(r=>r.m),datasets:[{label:"Vendas",data:mensal.map(r=>r.v),backgroundColor:"rgba(77,142,255,.5)",borderRadius:4,order:2,yAxisID:"y"},{label:"Lucro",data:mensal.map(r=>r.lu),type:"line",borderColor:"#00e599",backgroundColor:"rgba(0,229,153,.1)",fill:true,tension:.3,order:1,yAxisID:"y"},{label:"ROAS",data:mensal.map(r=>r.roas),type:"line",borderColor:"#ffbe2e",borderWidth:2.5,pointBackgroundColor:"#ffbe2e",pointRadius:4,fill:false,order:0,yAxisID:"y1"}]},options:{responsive:true,interaction:{mode:"index"},scales:{y:{position:"left",grid:{color:"#1a274440"}},y1:{position:"right",min:0,max:3.5,grid:{display:false}}}}});
+      charts.acum=new Chart(document.getElementById("ch-acum"),{type:"line",data:{labels:mensal.map(r=>r.m),datasets:[{label:"Lucro Acumulado",data:acumArr,borderColor:"#2ee5c9",backgroundColor:"rgba(46,229,201,.1)",fill:true,tension:.3,pointRadius:3}]},options:{responsive:true,scales:{y:{grid:{color:"#1a274440"},ticks:{callback:v=>(v/1000).toFixed(0)+"k"}}}}});
+    }
+
+    if(meses26.includes(id)){
+      const cp=campanhas.filter(r=>r.mes===id&&r.v>0).sort((a,b)=>b.v-a.v);
+      if(cp.length>1){const el=document.getElementById("ch-"+id.replace(/\//g,""));if(el)charts.mes=new Chart(el,{type:"bar",data:{labels:cp.map(r=>r.c),datasets:[{label:"Vendas",data:cp.map(r=>r.v),backgroundColor:"rgba(77,142,255,.6)",borderRadius:4},{label:"Lucro",data:cp.map(r=>r.lu),backgroundColor:cp.map(r=>r.lu>=0?"rgba(0,229,153,.5)":"rgba(255,77,106,.5)"),borderRadius:4}]},options:{responsive:true,indexAxis:"y",scales:{x:{grid:{color:"#1a274440"}}}}})}
+    }
+
+    if(id==="tipos"){charts.tipos=new Chart(document.getElementById("ch-tipos"),{type:"bar",data:{labels:tipoArr.map(r=>r.t),datasets:[{label:"Vendas",data:tipoArr.map(r=>r.v),backgroundColor:"rgba(77,142,255,.6)",borderRadius:4},{label:"Lucro",data:tipoArr.map(r=>r.lu),backgroundColor:tipoArr.map(r=>r.lu>=0?"rgba(0,229,153,.5)":"rgba(255,77,106,.5)"),borderRadius:4}]},options:{responsive:true,scales:{y:{grid:{color:"#1a274440"}}}}})}
+
+    if(id==="geo"){
+      charts.geo=new Chart(document.getElementById("ch-geo"),{type:"bar",data:{labels:geoArr.map(r=>r.e),datasets:[{label:"Vendas",data:geoArr.map(r=>r.v),backgroundColor:geoArr.map((_,i)=>cols[i%10]+"90"),borderRadius:4}]},options:{responsive:true,indexAxis:"y",scales:{x:{grid:{color:"#1a274440"}}}}});
+      if(regArr.length)charts.reg=new Chart(document.getElementById("ch-reg"),{type:"doughnut",data:{labels:regArr.map(r=>r.n),datasets:[{data:regArr.map(r=>r.v),backgroundColor:regArr.map((_,i)=>cols[i%10]),borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{padding:12,font:{size:10}}}}}});
+    }
+  }
+  renderCharts();
+}
+
+fetchData();
+</script>
+</body>
+</html>
