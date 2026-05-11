@@ -52,7 +52,12 @@ function render(){
 const totV=mensal.reduce((s,r)=>s+r.v,0),totI=mensal.reduce((s,r)=>s+r.inv,0),totC=mensal.reduce((s,r)=>s+r.com,0),totL=mensal.reduce((s,r)=>s+r.lu,0),roasG=totI>0?totC/totI:0;
 const m26=mensal.filter(r=>r.ano==="2026"||r.m.includes("/2026")||r.m.includes("/26"));
 const v26=m26.reduce((s,r)=>s+r.v,0),l26=m26.reduce((s,r)=>s+r.lu,0);
-const meses26=[...new Set(campanhas.filter(r=>r.ano==="2026"||r.mes.includes("/2026")||r.mes.includes("/26")).map(r=>r.mes))].filter(Boolean);
+const meses26=[...new Set(campanhas.filter(r=>(r.ano==="2026"||r.mes.toLowerCase().includes("/2026")||r.mes.toLowerCase().includes("/26"))&&r.mes&&r.mes!=="").map(r=>String(r.mes).trim()))].filter(Boolean).sort((a,b)=>{
+  const aP=normMes(a).split("/"),bP=normMes(b).split("/");
+  const aY=parseInt(aP[1])||0,bY=parseInt(bP[1])||0;
+  const aMo=mo[aP[0]]||0,bMo=mo[bP[0]]||0;
+  return(aY*100+aMo)-(bY*100+bMo);
+});
 let acum=0;const acumArr=mensal.map(r=>{acum+=r.lu;return acum});
 const geoMap={};vendas.forEach(r=>{const e=r.estado;if(e&&e!=="NaN"&&e!=="")geoMap[e]=(geoMap[e]||0)+1});
 const geoArr=Object.entries(geoMap).map(([e,v])=>({e,v})).sort((a,b)=>b.v-a.v).slice(0,12);
@@ -108,6 +113,51 @@ function getAdPerf(mes){
   return Object.values(adMap).sort((a,b)=>b.vendas-a.vendas);
 }
 
+function getAdPerfSearchPmax(mes){
+  const mv=vendas.filter(r=>normMes(r.mes)===normMes(mes)&&r.ad&&(r.camp.toLowerCase().includes("search")||r.camp.toLowerCase().includes("pmax")));
+  const adMap={};
+  mv.forEach(r=>{
+    const ad=r.ad;
+    if(!adMap[ad])adMap[ad]={ad,vendas:0,comTotal:0,tipo:r.tipo||"",camp:r.camp||""};
+    adMap[ad].vendas++;adMap[ad].comTotal+=r.com;
+  });
+  return Object.values(adMap).sort((a,b)=>b.vendas-a.vendas);
+}
+
+function getAdPerf3C(mes){
+  const mv=vendas.filter(r=>normMes(r.mes)===normMes(mes)&&r.ad&&r.camp.toLowerCase().includes("3c"));
+  const adMap={};
+  mv.forEach(r=>{
+    const ad=r.ad;
+    if(!adMap[ad])adMap[ad]={ad,vendas:0,comTotal:0,tipo:r.tipo||"",camp:r.camp||""};
+    adMap[ad].vendas++;adMap[ad].comTotal+=r.com;
+  });
+  return Object.values(adMap).sort((a,b)=>b.vendas-a.vendas);
+}
+
+function getAdPerfGW42(mes){
+  const mv=vendas.filter(r=>normMes(r.mes)===normMes(mes)&&r.ad&&r.ad.toLowerCase().includes("gw42"));
+  const adMap={};
+  mv.forEach(r=>{
+    const ad=r.ad;
+    if(!adMap[ad])adMap[ad]={ad,vendas:0,comTotal:0,tipo:r.tipo||"",camp:r.camp||""};
+    adMap[ad].vendas++;adMap[ad].comTotal+=r.com;
+  });
+  return Object.values(adMap).sort((a,b)=>b.vendas-a.vendas);
+}
+
+function getAdPerfRmkt(mes){
+  const rmktAds=["AD02_rmkt_inscritos_gw42","AD01_rmkt_inscritos_gw42","ad03_yt_rmkt_vv_ads_90d","AD01_rmkt_inscritos_gw42_v2","ad02_youtube_rmkt_inscritos_540d"];
+  const mv=vendas.filter(r=>normMes(r.mes)===normMes(mes)&&r.ad&&rmktAds.some(x=>r.ad.toLowerCase().includes(x.toLowerCase())));
+  const adMap={};
+  mv.forEach(r=>{
+    const ad=r.ad;
+    if(!adMap[ad])adMap[ad]={ad,vendas:0,comTotal:0,tipo:r.tipo||"",camp:r.camp||""};
+    adMap[ad].vendas++;adMap[ad].comTotal+=r.com;
+  });
+  return Object.values(adMap).sort((a,b)=>b.vendas-a.vendas);
+}
+
 function adTable(adData){
   if(!adData.length)return'';
   let h=sec("🎬","Desempenho por Anúncio","Top criativos do mês por vendas");
@@ -134,6 +184,54 @@ function adTable(adData){
   return h;
 }
 
+function adTableSearchPmax(adData){
+  if(!adData.length)return'';
+  let h=sec("🔍","Search + PMax","Desempenho combinado dos canais pagos diretos");
+  h+='<div class="card"><table><thead><tr><th style="text-align:left">Anúncio / Criativo</th><th>Campanha</th><th>Vendas</th><th>Comissão Total</th><th>Ticket Médio</th></tr></thead><tbody>';
+  adData.forEach((r,i)=>{
+    const ticket=r.vendas>0?r.comTotal/r.vendas:0;
+    h+='<tr><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:'+cols[i%10]+';margin-right:6px">●</span>'+r.ad+'</td><td style="font-size:10px;color:#8899b4">'+r.tipo+'</td><td style="font-weight:700">'+r.vendas+'</td><td style="color:#8899b4">'+fK(r.comTotal)+'</td><td style="font-weight:600;color:#2ee5c9">'+fR(ticket)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+function adTable3C(adData){
+  if(!adData.length)return'';
+  let h=sec("💼","Sistema 3C","Desempenho exclusivo da campanha 3C IM");
+  h+='<div class="card"><table><thead><tr><th style="text-align:left">Anúncio / Criativo</th><th>Vendas</th><th>Comissão Total</th><th>Ticket Médio</th></tr></thead><tbody>';
+  adData.forEach((r,i)=>{
+    const ticket=r.vendas>0?r.comTotal/r.vendas:0;
+    h+='<tr><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:'+cols[i%10]+';margin-right:6px">●</span>'+r.ad+'</td><td style="font-weight:700">'+r.vendas+'</td><td style="color:#8899b4">'+fK(r.comTotal)+'</td><td style="font-weight:600;color:#a47cff">'+fR(ticket)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+function adTableGW42(adData){
+  if(!adData.length)return'';
+  let h=sec("🎯","GW42 / Investidor Mestre","Criativos exclusivos do GW42 IM");
+  h+='<div class="card"><table><thead><tr><th style="text-align:left">Anúncio / Criativo</th><th>Vendas</th><th>Comissão Total</th><th>Ticket Médio</th></tr></thead><tbody>';
+  adData.forEach((r,i)=>{
+    const ticket=r.vendas>0?r.comTotal/r.vendas:0;
+    h+='<tr><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:'+cols[i%10]+';margin-right:6px">●</span>'+r.ad+'</td><td style="font-weight:700">'+r.vendas+'</td><td style="color:#8899b4">'+fK(r.comTotal)+'</td><td style="font-weight:600;color:#ffbe2e">'+fR(ticket)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+function adTableRmkt(adData){
+  if(!adData.length)return'';
+  let h=sec("🔄","Remarketing Inscritos","Desempenho dos públicos de remarketing");
+  h+='<div class="card"><table><thead><tr><th style="text-align:left">Anúncio / Criativo</th><th>Campanha</th><th>Vendas</th><th>Comissão Total</th><th>Ticket Médio</th></tr></thead><tbody>';
+  adData.forEach((r,i)=>{
+    const ticket=r.vendas>0?r.comTotal/r.vendas:0;
+    h+='<tr><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:'+cols[i%10]+';margin-right:6px">●</span>'+r.ad+'</td><td style="font-size:10px;color:#8899b4">'+r.tipo+'</td><td style="font-weight:700">'+r.vendas+'</td><td style="color:#8899b4">'+fK(r.comTotal)+'</td><td style="font-weight:600;color:#2ee5c9">'+fR(ticket)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
 let pages='';
 
 // OVERVIEW
@@ -148,7 +246,11 @@ meses26.forEach(mes=>{
   const paused=cp.filter(r=>r.v===0&&r.cu>0);
   const cid="ch-"+mes.replace(/[^a-zA-Z0-9]/g,"");
   const adData=getAdPerf(mes);
-  pages+='<div class="page" id="p-'+mes+'"><div class="grid4">'+kpi("Vendas",md.v.toString(),"CPA: "+fR(md.cpa))+kpi("ROAS",md.roas.toFixed(2),"Investido: "+fK(md.inv),"#4d8eff")+kpi("Lucro",fK(md.lu),"Comissão: "+fK(md.com),"#00e599")+kpi("Campanhas",cp.length.toString(),win.length+" venc · "+lose.length+" perd","#a47cff")+'</div>'+campTable(cp,"Campanhas — "+mes)+(win.length?box("i","🧠 <strong>Vencedoras:</strong> "+win.map(w=>w.c+" ("+w.roas.toFixed(2)+")").join(" · ")):"")+(lose.length?box("d","🔴 <strong>Prejuízo:</strong> "+lose.map(l=>l.c+" ("+l.roas.toFixed(2)+", "+fK(l.lu)+")").join(" · ")):"")+(paused.length?box("w","⚠️ <strong>Pausadas:</strong> "+paused.map(p=>p.c+" ("+fK(p.cu)+")").join(" · ")):"")+(cp.filter(r=>r.v>0).length>1?'<div class="card"><canvas id="'+cid+'"></canvas></div>':'')+adTable(adData)+'</div>';
+  const adDataSearchPmax=getAdPerfSearchPmax(mes);
+  const adData3C=getAdPerf3C(mes);
+  const adDataGW42=getAdPerfGW42(mes);
+  const adDataRmkt=getAdPerfRmkt(mes);
+  pages+='<div class="page" id="p-'+mes+'"><div class="grid4">'+kpi("Vendas",md.v.toString(),"CPA: "+fR(md.cpa))+kpi("ROAS",md.roas.toFixed(2),"Investido: "+fK(md.inv),"#4d8eff")+kpi("Lucro",fK(md.lu),"Comissão: "+fK(md.com),"#00e599")+kpi("Campanhas",cp.length.toString(),win.length+" venc · "+lose.length+" perd","#a47cff")+'</div>'+campTable(cp,"Campanhas — "+mes)+(win.length?box("i","🧠 <strong>Vencedoras:</strong> "+win.map(w=>w.c+" ("+w.roas.toFixed(2)+")").join(" · ")):"")+(lose.length?box("d","🔴 <strong>Prejuízo:</strong> "+lose.map(l=>l.c+" ("+l.roas.toFixed(2)+", "+fK(l.lu)+")").join(" · ")):"")+(paused.length?box("w","⚠️ <strong>Pausadas:</strong> "+paused.map(p=>p.c+" ("+fK(p.cu)+")").join(" · ")):"")+(cp.filter(r=>r.v>0).length>1?'<div class="card"><canvas id="'+cid+'"></canvas></div>':'')+adTable(adData)+adTableSearchPmax(adDataSearchPmax)+adTable3C(adData3C)+adTableGW42(adDataGW42)+adTableRmkt(adDataRmkt)+'</div>';
 });
 
 // TIPOS
