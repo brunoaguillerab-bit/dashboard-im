@@ -1,180 +1,790 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Investidor Mestre 3.0 — Google Ads Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#06090f;--sf:#0c1220;--cd:#111a2e;--bd:#1a2744;--g:#00e599;--b:#4d8eff;--p:#a47cff;--y:#ffbe2e;--r:#ff4d6a;--c:#2ee5c9;--t:#e2e8f0;--d:#8899b4;--m:#4a5d80}*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--t);font-family:'DM Sans',system-ui,sans-serif}::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--sf)}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}.wrap{max-width:1120px;margin:0 auto;padding:28px 16px}.header{text-align:center;margin-bottom:28px}.badge{display:inline-block;padding:3px 12px;background:rgba(0,229,153,.1);border:1px solid rgba(0,229,153,.2);border-radius:20px;font-size:10px;color:var(--g);font-weight:600;letter-spacing:1px;margin-bottom:10px;text-transform:uppercase}h1{font-size:28px;font-weight:900;letter-spacing:-1px}h1 span{color:var(--g)}.subtitle{color:var(--d);font-size:13px;margin-top:6px}.meta{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:8px}.meta span{font-size:10px;color:var(--m)}.meta button{padding:4px 12px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;color:var(--d);font-size:10px;cursor:pointer;font-family:inherit}.tabs{display:flex;gap:3px;margin-bottom:28px;justify-content:center;flex-wrap:wrap}.tab{padding:6px 14px;font-size:11px;font-weight:500;color:var(--d);background:var(--sf);border:1px solid var(--bd);border-radius:20px;cursor:pointer;font-family:inherit;transition:.2s}.tab.active{font-weight:700;color:var(--bg);background:var(--g);border-color:var(--g)}.tab:hover:not(.active){background:var(--cd)}.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}.kpi{background:linear-gradient(135deg,var(--cd),var(--sf));border:1px solid var(--bd);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden}.kpi .bar{position:absolute;top:0;left:0;right:0;height:3px}.kpi .label{font-size:10px;color:var(--d);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:500}.kpi .value{font-size:26px;font-weight:800;line-height:1}.kpi .sub{font-size:11px;color:var(--m);margin-top:5px}.card{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:20px}.sec{margin-bottom:16px;margin-top:32px}.sec h2{font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px}.sec p{font-size:12px;color:var(--d);margin:4px 0 0 28px}.box{border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:12px;line-height:1.6;border-left:3px solid}.box.i{background:rgba(0,61,41,.3);border-color:var(--g)}.box.w{background:rgba(61,40,0,.3);border-color:var(--y)}.box.d{background:rgba(61,0,21,.3);border-color:var(--r)}table{width:100%;font-size:11px;border-collapse:collapse}th{text-align:right;padding:7px 6px;color:var(--m);font-size:9px;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid var(--bd)}th:first-child{text-align:left}td{padding:8px 6px;text-align:right;border-bottom:1px solid rgba(26,39,68,.15)}td:first-child{text-align:left;font-weight:600}.status{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600}.comp{display:grid;gap:10px;margin-bottom:20px}.page{display:none}.page.active{display:block}.footer{text-align:center;margin-top:40px;padding:20px;border-top:1px solid var(--bd)}.footer div{font-size:10px;color:var(--m)}.loading{display:flex;align-items:center;justify-content:center;min-height:80vh;flex-direction:column;gap:16px}.spinner{width:40px;height:40px;border:3px solid var(--bd);border-top-color:var(--g);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.error{text-align:center;max-width:400px;margin:100px auto;padding:40px}.error button{margin-top:16px;padding:10px 24px;background:var(--g);color:var(--bg);border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;font-family:inherit}canvas{max-height:320px}@media(max-width:768px){.grid2,.comp{grid-template-columns:1fr}.wrap{padding:16px 10px}h1{font-size:22px}}
-</style>
-</head>
-<body>
-<div class="wrap" id="app"><div class="loading"><div class="spinner"></div><div style="color:var(--g);font-size:16px;font-weight:700">Carregando dados...</div></div></div>
-<script>
-const SID="10eM89DK8v0IPjUjGlaB_AP88Y9TfvpUZoHZdVBAe2NE";
-const csvUrl=s=>"https://docs.google.com/spreadsheets/d/"+SID+"/gviz/tq?tqx=out:csv&sheet="+encodeURIComponent(s)+"&t="+Date.now();
-function toNum(v){if(typeof v==="number"&&!isNaN(v))return v;if(!v||v===""||v==="-")return 0;let s=String(v).trim().replace("R$","").replace(/\s/g,"");if(s.includes(".")&&s.includes(","))s=s.replace(/\./g,"").replace(",",".");else if(s.includes(",")&&!s.includes("."))s=s.replace(",",".");const n=parseFloat(s);return isNaN(n)?0:n}
-function col(r,names){for(const n of names)for(const k of Object.keys(r)){const kn=k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();const nn=n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();if(kn===nn||kn.includes(nn))return r[k]}return null}
-function normMes(m){if(!m)return"";return String(m).toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
-const fK=n=>{n=toNum(n);return"R$"+(n/1000).toFixed(1)+"k"};const fR=n=>{n=toNum(n);return"R$"+Math.round(n).toLocaleString("pt-BR")};
-const rc=r=>r>=2.5?"#00e599":r>=1.5?"#4d8eff":r>=1?"#ffbe2e":"#ff4d6a";const lc=l=>l>=0?"#00e599":"#ff4d6a";
-const sc=s=>{if(!s)return"#4a5d80";const l=String(s).toLowerCase();return l.includes("venc")?"#00e599":l.includes("prom")?"#4d8eff":l.includes("break")?"#ffbe2e":l.includes("perd")?"#ff4d6a":"#4a5d80"};
-const cols=["#00e599","#4d8eff","#a47cff","#ffbe2e","#ff4d6a","#2ee5c9","#ff6bb5","#6366f1","#f97316","#14b8a6"];
-Chart.defaults.color="#8899b4";Chart.defaults.borderColor="#1a2744";Chart.defaults.font.family="'DM Sans',system-ui";
-let charts={},mensal=[],campanhas=[],vendas=[],currentTab="overview";
+import { useState, useEffect, useRef } from "react";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, ReferenceLine
+} from "recharts";
 
-async function fetchData(){
-try{
-const[mR,cR,vR]=await Promise.all([fetch(csvUrl("Looker Mensal")),fetch(csvUrl("Looker Campanhas")),fetch(csvUrl("Looker Vendas"))]);
-if(!mR.ok||!cR.ok||!vR.ok)throw new Error("Planilha nao acessivel");
-const[mT,cT,vT]=await Promise.all([mR.text(),cR.text(),vR.text()]);
-const parse=csv=>Papa.parse(csv,{header:true,skipEmptyLines:true}).data;
-mensal=parse(mT).map(r=>({m:String(col(r,["mes","Mes"])||"").trim(),v:toNum(col(r,["vendas"])),inv:toNum(col(r,["investido"])),com:toNum(col(r,["comissao","comissão"])),lu:toNum(col(r,["lucro bruto","lucro"])),roas:toNum(col(r,["roas"])),cpa:toNum(col(r,["cpa"])),ano:String(col(r,["ano"])||"")})).filter(r=>r.v>0&&r.m);
-campanhas=parse(cT).map(r=>({mes:String(col(r,["mes","Mes"])||"").trim(),ano:String(col(r,["ano"])||""),c:String(col(r,["campanha"])||"").trim(),tipo:String(col(r,["tipo"])||"").trim(),v:toNum(col(r,["vendas"])),cpa:toNum(col(r,["cpa"])),cu:toNum(col(r,["custo"])),co:toNum(col(r,["comissao","comissão"])),lu:toNum(col(r,["lucro"])),roas:toNum(col(r,["roas"])),st:String(col(r,["status"])||"").trim()})).filter(r=>r.c&&r.mes);
-vendas=parse(vT).map(r=>({mes:String(col(r,["mes","Mes"])||"").trim(),ano:String(col(r,["ano"])||""),camp:String(col(r,["campanha"])||"").trim(),tipo:String(col(r,["tipo"])||"").trim(),ad:String(col(r,["ad","criativo","ad/criativo"])||"").trim(),com:toNum(col(r,["comissao","comissão"])),cidade:String(col(r,["cidade"])||"").trim(),estado:String(col(r,["estado"])||"").trim(),regiao:String(col(r,["regiao","região"])||"").trim()})).filter(r=>r.camp&&r.mes);
-// Fill missing months from campanhas
-const mensalMeses=new Set(mensal.map(r=>normMes(r.m)));
-[...new Set(campanhas.map(r=>r.mes))].filter(Boolean).forEach(mes=>{
-  if(!mensalMeses.has(normMes(mes))){
-    const cp=campanhas.filter(r=>r.mes===mes);const v=cp.reduce((s,r)=>s+r.v,0);const cu=cp.reduce((s,r)=>s+r.cu,0);const co=cp.reduce((s,r)=>s+r.co,0);const lu=cp.reduce((s,r)=>s+r.lu,0);
-    if(v>0||cu>0)mensal.push({m:mes,v,inv:cu,com:co,lu,roas:cu>0?co/cu:0,cpa:v>0?cu/v:0,ano:cp[0]?.ano||""});
+const G = `
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg0: #020617;
+    --bg1: #06111f;
+    --bg2: #071521;
+    --card: #081426;
+    --card2: #0B1730;
+    --border: rgba(0,255,178,0.08);
+    --border2: rgba(0,255,178,0.18);
+    --green: #00FFB2;
+    --green2: #00D68F;
+    --green3: #1affb2;
+    --glow: rgba(0,255,178,0.12);
+    --glow2: rgba(0,255,178,0.22);
+    --blue: #3b8bff;
+    --purple: #a78bfa;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --cyan: #22d3ee;
+    --text: #ffffff;
+    --text2: #A8B3CF;
+    --text3: #6B7A99;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Sora', -apple-system, sans-serif;
   }
-});
-const mo={"janeiro":1,"fevereiro":2,"marco":3,"abril":4,"maio":5,"junho":6,"julho":7,"agosto":8,"setembro":9,"outubro":10,"novembro":11,"dezembro":12};
-mensal.sort((a,b)=>{const aP=normMes(a.m).split("/"),bP=normMes(b.m).split("/");return((parseInt(aP[1])||0)*100+(mo[aP[0]]||0))-((parseInt(bP[1])||0)*100+(mo[bP[0]]||0))});
-render();
-}catch(e){document.getElementById("app").innerHTML='<div class="error"><div style="font-size:32px">⚠️</div><div style="color:#ff4d6a;font-size:16px;font-weight:700;margin:12px 0">Erro ao carregar</div><div style="color:#8899b4;font-size:13px;margin-bottom:16px">'+e.message+'</div><button onclick="location.reload()">Tentar novamente</button></div>'}}
-
-function render(){
-const totV=mensal.reduce((s,r)=>s+r.v,0),totI=mensal.reduce((s,r)=>s+r.inv,0),totC=mensal.reduce((s,r)=>s+r.com,0),totL=mensal.reduce((s,r)=>s+r.lu,0),roasG=totI>0?totC/totI:0;
-const m26=mensal.filter(r=>r.ano==="2026"||r.m.includes("/2026")||r.m.includes("/26"));
-const v26=m26.reduce((s,r)=>s+r.v,0),l26=m26.reduce((s,r)=>s+r.lu,0);
-const meses26=[...new Set(campanhas.filter(r=>r.ano==="2026"||r.mes.includes("/2026")||r.mes.includes("/26")).map(r=>r.mes))].filter(Boolean);
-let acum=0;const acumArr=mensal.map(r=>{acum+=r.lu;return acum});
-const geoMap={};vendas.forEach(r=>{const e=r.estado;if(e&&e!=="NaN"&&e!=="")geoMap[e]=(geoMap[e]||0)+1});
-const geoArr=Object.entries(geoMap).map(([e,v])=>({e,v})).sort((a,b)=>b.v-a.v).slice(0,12);
-const regMap={};vendas.forEach(r=>{const rg=r.regiao;if(rg&&rg!=="NaN"&&rg!=="")regMap[rg]=(regMap[rg]||0)+1});
-const regArr=Object.entries(regMap).map(([n,v])=>({n,v})).sort((a,b)=>b.v-a.v);
-const tipoMap={};campanhas.forEach(r=>{const t=r.tipo||"Outros";if(!tipoMap[t])tipoMap[t]={v:0,cu:0,co:0,lu:0};tipoMap[t].v+=r.v;tipoMap[t].cu+=r.cu;tipoMap[t].co+=r.co;tipoMap[t].lu+=r.lu});
-const tipoArr=Object.entries(tipoMap).map(([t,d])=>({t,...d,roas:d.cu>0?d.co/d.cu:0})).sort((a,b)=>b.v-a.v);
-const tabs=[{id:"overview",l:"Visão Geral"},...meses26.map(m=>({id:m,l:m.split("/")[0]})),{id:"tipos",l:"Por Tipo"},{id:"geo",l:"Geo"}];
-
-function kpi(a,b,c,d){d=d||"#00e599";return'<div class="kpi"><div class="bar" style="background:linear-gradient(90deg,'+d+',transparent)"></div><div class="label">'+a+'</div><div class="value" style="color:'+d+'">'+b+'</div>'+(c?'<div class="sub">'+c+'</div>':'')+'</div>'}
-function sec(a,b,c){return'<div class="sec"><h2>'+a+' '+b+'</h2>'+(c?'<p>'+c+'</p>':'')+'</div>'}
-function box(a,b){return'<div class="box '+a+'">'+b+'</div>'}
-function campTable(data,title){
-  const tid="ct-"+Math.random().toString(36).slice(2,8);
-  const headers=[{l:"Campanha",k:"c",align:"left",str:true},{l:"Tipo",k:"tipo",align:"left",str:true},{l:"Vendas",k:"v"},{l:"Custo",k:"cu"},{l:"Comissão",k:"co"},{l:"Lucro",k:"lu"},{l:"ROAS",k:"roas"},{l:"Status",k:"st",align:"left",str:true}];
-  function buildTable(arr,sortKey,sortDir){
-    let sorted=[...arr];
-    if(sortKey){const h=headers.find(h=>h.k===sortKey);sorted.sort((a,b)=>{const va=a[sortKey],vb=b[sortKey];if(h&&h.str)return sortDir==="asc"?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));return sortDir==="asc"?va-vb:vb-va});}
-    let rows="";
-    sorted.forEach(r=>{rows+='<tr><td>'+r.c+'</td><td style="font-size:10px;color:#8899b4">'+r.tipo+'</td><td style="font-weight:700">'+r.v+'</td><td style="color:#8899b4">'+fK(r.cu)+'</td><td style="color:#2ee5c9">'+fK(r.co)+'</td><td style="font-weight:700;color:'+lc(r.lu)+'">'+fK(r.lu)+'</td><td style="font-weight:800;color:'+rc(r.roas)+';font-size:12px">'+r.roas.toFixed(2)+'</td><td><span class="status" style="background:'+sc(r.st)+'20;color:'+sc(r.st)+'">'+r.st+'</span></td></tr>';});
-    return rows;
+  html { background: var(--bg0); }
+  body { font-family: var(--sans); background: var(--bg0); color: var(--text); -webkit-font-smoothing: antialiased; }
+  button { font-family: var(--sans); cursor: pointer; border: none; background: none; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
-  function thStyle(h,sortKey,sortDir){const active=sortKey===h.k;const align=h.align||"right";const arrow=active?(sortDir==="asc"?" ↑":" ↓"):" ↕";return'<th data-key="'+h.k+'" style="text-align:'+align+';cursor:pointer;user-select:none;'+(active?"color:#00e599;":"")+'" title="Ordenar por '+h.l+'">'+h.l+'<span style="opacity:'+(active?1:.3)+';font-size:9px">'+arrow+'</span></th>';}
-  let sortKey="v",sortDir="desc";
-  const html='<div class="card" id="wrap-'+tid+'">'+(title?'<div style="font-size:13px;font-weight:700;margin-bottom:12px">'+title+'</div>':'')+'<div style="overflow-x:auto"><table id="'+tid+'"><thead><tr id="head-'+tid+'">'+headers.map(h=>thStyle(h,sortKey,sortDir)).join('')+'</tr></thead><tbody id="body-'+tid+'">'+buildTable(data,sortKey,sortDir)+'</tbody></table></div></div>';
-  setTimeout(()=>{
-    const head=document.getElementById("head-"+tid);
-    if(!head)return;
-    head.querySelectorAll("th[data-key]").forEach(th=>{th.addEventListener("click",()=>{const k=th.dataset.key;if(sortKey===k)sortDir=sortDir==="desc"?"asc":"desc";else{sortKey=k;sortDir=headers.find(h=>h.k===k)?.str?"asc":"desc";}
-    document.getElementById("body-"+tid).innerHTML=buildTable(data,sortKey,sortDir);
-    head.innerHTML=headers.map(h=>thStyle(h,sortKey,sortDir)).join('');
-    head.querySelectorAll("th[data-key]").forEach(t2=>{t2.addEventListener("click",()=>t2.click())});
-    // Re-attach after re-render
-    setTimeout(()=>{head.querySelectorAll("th[data-key]").forEach(t2=>{t2.onclick=()=>{const k2=t2.dataset.key;if(sortKey===k2)sortDir=sortDir==="desc"?"asc":"desc";else{sortKey=k2;sortDir=headers.find(h=>h.k===k2)?.str?"asc":"desc";}document.getElementById("body-"+tid).innerHTML=buildTable(data,sortKey,sortDir);head.innerHTML=headers.map(h=>thStyle(h,sortKey,sortDir)).join('');attachSort();}})},0);
-    })});
-    function attachSort(){head.querySelectorAll("th[data-key]").forEach(th=>{th.onclick=()=>{const k=th.dataset.key;if(sortKey===k)sortDir=sortDir==="desc"?"asc":"desc";else{sortKey=k;sortDir=headers.find(h=>h.k===k)?.str?"asc":"desc";}document.getElementById("body-"+tid).innerHTML=buildTable(data,sortKey,sortDir);head.innerHTML=headers.map(h=>thStyle(h,sortKey,sortDir)).join('');attachSort();}});}
-    attachSort();
-  },50);
-  return html;
-}
-
-function getMesData(mes){let md=mensal.find(r=>normMes(r.m)===normMes(mes));if(md&&md.v>0)return md;const cp=campanhas.filter(r=>r.mes===mes);const v=cp.reduce((s,r)=>s+r.v,0),cu=cp.reduce((s,r)=>s+r.cu,0),co=cp.reduce((s,r)=>s+r.co,0),lu=cp.reduce((s,r)=>s+r.lu,0);return{m:mes,v,inv:cu,com:co,lu,roas:cu>0?co/cu:0,cpa:v>0?cu/v:0,ano:cp[0]?.ano||""}}
-
-// Build ad performance per month
-function getAdPerf(mes){
-  const mv=vendas.filter(r=>normMes(r.mes)===normMes(mes)&&r.ad&&r.ad!==""&&r.ad!=="NaN"&&r.ad!=="-");
-  const adMap={};
-  mv.forEach(r=>{
-    const ad=r.ad;
-    if(!adMap[ad])adMap[ad]={ad,vendas:0,comTotal:0,tipo:r.tipo||"",camp:r.camp||""};
-    adMap[ad].vendas++;adMap[ad].comTotal+=r.com;
-  });
-  return Object.values(adMap).sort((a,b)=>b.vendas-a.vendas);
-}
-
-function adTable(adData){
-  if(!adData.length)return'';
-  let h=sec("🎬","Desempenho por Anúncio","Top criativos do mês por vendas");
-  h+='<div class="card"><table><thead><tr><th style="text-align:left">Anúncio / Criativo</th><th>Campanha</th><th>Vendas</th><th>Comissão Total</th><th>Ticket Médio</th></tr></thead><tbody>';
-  adData.slice(0,15).forEach((r,i)=>{
-    const ticket=r.vendas>0?r.comTotal/r.vendas:0;
-    h+='<tr><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:'+cols[i%10]+';margin-right:6px">●</span>'+r.ad+'</td><td style="font-size:10px;color:#8899b4">'+r.tipo+'</td><td style="font-weight:700">'+r.vendas+'</td><td style="color:#8899b4">'+fK(r.comTotal)+'</td><td style="font-weight:600;color:#2ee5c9">'+fR(ticket)+'</td></tr>';
-  });
-  h+='</tbody></table></div>';
-  // Chart
-  const top8=adData.slice(0,8);
-  if(top8.length>1){
-    const cid="ch-ad-"+normMes(adData[0]?.camp||"x").replace(/[^a-z0-9]/g,"")+""+Math.random().toString(36).slice(2,6);
-    h+='<div class="card"><canvas id="'+cid+'"></canvas></div>';
-    // Queue chart render
-    setTimeout(()=>{
-      const el=document.getElementById(cid);
-      if(el){
-        if(charts["ad_"+cid])charts["ad_"+cid].destroy();
-        charts["ad_"+cid]=new Chart(el,{type:"bar",data:{labels:top8.map(r=>r.ad.length>30?r.ad.slice(0,30)+"...":r.ad),datasets:[{label:"Vendas",data:top8.map(r=>r.vendas),backgroundColor:top8.map((_,i)=>cols[i%10]+"90"),borderRadius:4}]},options:{responsive:true,indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{grid:{color:"#1a274440"}}}}});
-      }
-    },100);
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,178,0); }
+    50%       { box-shadow: 0 0 20px 4px rgba(0,255,178,0.15); }
   }
-  return h;
+  @keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  .fade-in { animation: fadeUp 0.45s cubic-bezier(.22,.68,0,1.2) both; }
+  .fade-in-1 { animation: fadeUp 0.45s .05s cubic-bezier(.22,.68,0,1.2) both; }
+  .fade-in-2 { animation: fadeUp 0.45s .10s cubic-bezier(.22,.68,0,1.2) both; }
+  .fade-in-3 { animation: fadeUp 0.45s .15s cubic-bezier(.22,.68,0,1.2) both; }
+  .fade-in-4 { animation: fadeUp 0.45s .20s cubic-bezier(.22,.68,0,1.2) both; }
+  .kpi-card:hover { border-color: var(--border2) !important; transform: translateY(-2px); transition: all .25s ease; }
+  .kpi-card { transition: all .25s ease; }
+  .action-item:hover { border-color: rgba(255,255,255,0.12) !important; }
+  .action-item { transition: border-color .2s ease; }
+  .tab-btn:hover { color: var(--text) !important; }
+  .tab-btn { transition: all .2s ease; }
+  .insight-row:hover { background: rgba(255,255,255,0.03) !important; }
+  .insight-row { transition: background .15s; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg1); }
+  ::-webkit-scrollbar-thumb { background: rgba(0,255,178,0.2); border-radius: 4px; }
+`;
+
+const C = {
+  bg0:"#020617",bg1:"#06111f",bg2:"#071521",
+  card:"#081426",card2:"#0B1730",
+  border:"rgba(0,255,178,0.08)",border2:"rgba(0,255,178,0.18)",
+  green:"#00FFB2",green2:"#00D68F",green3:"#1affb2",
+  glow:"rgba(0,255,178,0.12)",
+  blue:"#3b8bff",purple:"#a78bfa",amber:"#fbbf24",
+  red:"#f87171",cyan:"#22d3ee",
+  text:"#ffffff",text2:"#A8B3CF",text3:"#6B7A99",
+};
+
+const PIE_C = ["#00FFB2","#3b8bff","#a78bfa","#fbbf24","#22d3ee","#f87171"];
+
+const dailyData = [
+  {date:"16/03",vendas:26},{date:"17/03",vendas:20},{date:"18/03",vendas:19},
+  {date:"19/03",vendas:29},{date:"20/03",vendas:12},{date:"21/03",vendas:15},
+  {date:"22/03",vendas:12},{date:"23/03",vendas:27},{date:"24/03",vendas:22},
+  {date:"25/03",vendas:22},{date:"26/03",vendas:12},{date:"27/03",vendas:18},
+  {date:"28/03",vendas:19},{date:"29/03",vendas:18},{date:"30/03",vendas:22},
+  {date:"31/03",vendas:653,highlight:true},
+  {date:"01/04",vendas:155},{date:"02/04",vendas:63},{date:"03/04",vendas:45},
+  {date:"04/04",vendas:32},{date:"05/04",vendas:28},{date:"06/04",vendas:63},
+  {date:"07/04",vendas:59},{date:"08/04",vendas:44},{date:"09/04",vendas:28},
+  {date:"10/04",vendas:25},{date:"11/04",vendas:26},{date:"12/04",vendas:16},
+  {date:"13/04",vendas:34},{date:"14/04",vendas:26},{date:"15/04",vendas:10},
+];
+
+const hourlyData = [
+  {hora:"0h",v:22},{hora:"1h",v:14},{hora:"2h",v:7},{hora:"3h",v:4},
+  {hora:"4h",v:30},{hora:"5h",v:5},{hora:"6h",v:8},{hora:"7h",v:18},
+  {hora:"8h",v:38},{hora:"9h",v:60},{hora:"10h",v:80},{hora:"11h",v:82},
+  {hora:"12h",v:52},{hora:"13h",v:49},{hora:"14h",v:39},{hora:"15h",v:41},
+  {hora:"16h",v:43},{hora:"17h",v:55},{hora:"18h",v:43},{hora:"19h",v:45},
+  {hora:"20h",v:57},{hora:"21h",v:64},{hora:"22h",v:65},{hora:"23h",v:26},
+];
+
+const dowData = [
+  {dia:"Seg",v:172,pct:18.2},{dia:"Ter",v:127,pct:13.4},
+  {dia:"Qua",v:250,pct:26.4},{dia:"Qui",v:132,pct:13.9},
+  {dia:"Sex",v:100,pct:10.6},{dia:"Sáb",v:92,pct:9.7},{dia:"Dom",v:74,pct:7.8},
+];
+
+const stateData = [
+  {e:"SP",v:467,pct:29.2},{e:"RJ",v:262,pct:16.4},{e:"MG",v:158,pct:9.9},
+  {e:"RS",v:114,pct:7.1},{e:"DF",v:88,pct:5.5},{e:"BA",v:77,pct:4.8},
+  {e:"SC",v:73,pct:4.6},{e:"PR",v:70,pct:4.4},
+];
+
+const payData = [
+  {name:"12x Cartão",value:1083,pct:67.7},
+  {name:"Pix / Boleto",value:323,pct:20.2},
+  {name:"6x Cartão",value:109,pct:6.8},
+  {name:"Outros",value:85,pct:5.3},
+];
+
+const channelData = [
+  {canal:"Orgânico / Direto",vendas:857,receita:"R$1,29M",ticket:1513,color:C.green},
+  {canal:"Ads (FB + Google)",vendas:441,receita:"R$676k",ticket:1533,color:C.blue},
+  {canal:"Comercial (SDR)",vendas:302,receita:"R$314k",ticket:1038,color:C.purple},
+];
+
+const decayData = [
+  {dia:"01/04",v:155},{dia:"02/04",v:63},{dia:"03/04",v:45},{dia:"04/04",v:32},
+  {dia:"05/04",v:28},{dia:"06/04",v:63},{dia:"07/04",v:59},{dia:"08/04",v:44},
+  {dia:"09/04",v:28},{dia:"10/04",v:25},{dia:"11/04",v:26},{dia:"12/04",v:16},
+  {dia:"13/04",v:34},{dia:"14/04",v:26},{dia:"15/04",v:10},
+];
+
+const Sparkline = ({ data, color = C.green, width = 80, height = 32 }) => {
+  const max = Math.max(...data);
+  const pts = data.map((v, i) =>
+    `${(i / (data.length - 1)) * width},${height - (v / max) * height}`
+  ).join(" ");
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: "visible" }}>
+      <defs>
+        <linearGradient id={`sg-${color.replace("#","")}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points={`0,${height} ${pts} ${width},${height}`}
+        fill={`url(#sg-${color.replace("#","")})`}
+      />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+};
+
+const Tooltip_ = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: "#0d1f36", border: `1px solid ${C.border2}`,
+      borderRadius: 10, padding: "10px 14px", fontSize: 13,
+      boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+    }}>
+      <div style={{ color: C.text2, marginBottom: 6, fontWeight: 600 }}>{label}</div>
+      {payload.map((p, i) => (
+        <div key={i} style={{ color: p.color || C.green, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: p.color || C.green }} />
+          <span style={{ color: C.text2 }}>{p.name || "Vendas"}:</span>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: C.text }}>
+            {typeof p.value === "number" ? p.value.toLocaleString("pt-BR") : p.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const Tag = ({ type, children }) => {
+  const map = {
+    insight: { bg: "rgba(0,255,178,0.07)", border: "rgba(0,255,178,0.2)", dot: C.green, label: "INSIGHT" },
+    warning: { bg: "rgba(251,191,36,0.07)", border: "rgba(251,191,36,0.2)", dot: C.amber, label: "ATENÇÃO" },
+    action:  { bg: "rgba(167,139,250,0.07)", border: "rgba(167,139,250,0.2)", dot: C.purple, label: "AÇÃO" },
+    danger:  { bg: "rgba(248,113,113,0.07)", border: "rgba(248,113,113,0.2)", dot: C.red, label: "ALERTA" },
+  };
+  const s = map[type] || map.insight;
+  return (
+    <div style={{
+      background: s.bg, border: `1px solid ${s.border}`,
+      borderRadius: 12, padding: "14px 18px",
+      marginBottom: 12, fontSize: 14, color: C.text2, lineHeight: 1.7,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <div style={{ width: 7, height: 7, borderRadius: "50%", background: s.dot, boxShadow: `0 0 8px ${s.dot}` }} />
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: s.dot }}>{s.label}</span>
+      </div>
+      <div style={{ color: C.text }}>{children}</div>
+    </div>
+  );
+};
+
+const Section = ({ icon, title, subtitle, style }) => (
+  <div style={{ marginBottom: 20, marginTop: 44, ...style }}>
+    <h2 style={{
+      fontSize: 18, fontWeight: 700, color: C.text, margin: 0,
+      display: "flex", alignItems: "center", gap: 10,
+    }}>
+      <span style={{
+        background: C.glow, border: `1px solid ${C.border2}`,
+        borderRadius: 8, padding: "6px 10px", fontSize: 16,
+      }}>{icon}</span>
+      {title}
+    </h2>
+    {subtitle && <p style={{ fontSize: 13, color: C.text3, marginTop: 8, paddingLeft: 46 }}>{subtitle}</p>}
+  </div>
+);
+
+const KPI = ({ label, value, sub, color = C.green, sparkData, trend }) => (
+  <div className="kpi-card fade-in" style={{
+    background: "linear-gradient(135deg, #081426 0%, #0a1930 100%)",
+    border: `1px solid ${C.border}`,
+    borderRadius: 16, padding: "22px 24px",
+    position: "relative", overflow: "hidden",
+    cursor: "default",
+  }}>
+    <div style={{
+      position: "absolute", top: 0, left: 0, right: 0, height: 1,
+      background: `linear-gradient(90deg, transparent, ${color}50, transparent)`,
+    }} />
+    <div style={{ fontSize: 11, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10 }}>
+      {label}
+    </div>
+    <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 8 }}>
+      <div style={{
+        fontSize: 28, fontWeight: 800, color, lineHeight: 1,
+        fontFamily: "'JetBrains Mono', monospace",
+      }}>{value}</div>
+      {sparkData && <Sparkline data={sparkData} color={color} />}
+    </div>
+    {(sub || trend) && (
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {trend && (
+          <span style={{
+            fontSize: 11, fontWeight: 600, padding: "2px 8px",
+            background: trend > 0 ? "rgba(0,255,178,0.1)" : "rgba(248,113,113,0.1)",
+            color: trend > 0 ? C.green : C.red, borderRadius: 6,
+          }}>
+            {trend > 0 ? "↑" : "↓"} {Math.abs(trend)}%
+          </span>
+        )}
+        {sub && <span style={{ fontSize: 12, color: C.text3 }}>{sub}</span>}
+      </div>
+    )}
+    <div style={{
+      position: "absolute", bottom: -20, right: -20, width: 80, height: 80,
+      borderRadius: "50%", background: `radial-gradient(circle, ${color}08, transparent 70%)`,
+    }} />
+  </div>
+);
+
+const TABS = [
+  { id: "overview",    label: "Visão Geral",  icon: "⬡" },
+  { id: "temporal",    label: "Temporal",     icon: "◷" },
+  { id: "performance", label: "Performance",  icon: "◈" },
+  { id: "insights",    label: "Insights",     icon: "◉" },
+  { id: "action",      label: "Plano de Ação",icon: "◆" },
+];
+
+export default function Dashboard() {
+  const [tab, setTab] = useState("overview");
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  const sparkKPI = [26,20,29,22,22,18,22,155,63,45,32,28,63,59,44,28,25,26,34,26];
+
+  return (
+    <div style={{ background: C.bg0, minHeight: "100vh", color: C.text, fontFamily: "'Sora', sans-serif" }}>
+      <style>{G}</style>
+
+      {/* Ambient glow top */}
+      <div style={{
+        position: "fixed", top: -100, left: "50%", transform: "translateX(-50%)",
+        width: 700, height: 300, borderRadius: "50%",
+        background: "radial-gradient(ellipse, rgba(0,255,178,0.06), transparent 70%)",
+        pointerEvents: "none", zIndex: 0,
+      }} />
+
+      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "36px 24px", position: "relative", zIndex: 1 }}>
+
+        {/* ── HERO ── */}
+        <div className="fade-in" style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "rgba(0,255,178,0.07)", border: `1px solid ${C.border2}`,
+            borderRadius: 20, padding: "5px 14px", marginBottom: 20,
+            fontSize: 11, fontWeight: 600, letterSpacing: 1.5, color: C.green,
+            textTransform: "uppercase",
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, animation: "pulse-glow 2.5s infinite" }} />
+            Análise ao vivo · 16/03 – 15/04/2026
+          </div>
+
+          <h1 style={{
+            fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 800, lineHeight: 1.1, marginBottom: 14,
+            background: `linear-gradient(135deg, #ffffff 0%, ${C.green3} 60%, ${C.blue} 100%)`,
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}>
+            Investidor Mestre 3.0
+          </h1>
+          <p style={{ fontSize: 15, color: C.text3, maxWidth: 480, margin: "0 auto" }}>
+            Dashboard de performance comercial · 1.600 transações analisadas
+          </p>
+
+          {/* Quick stats strip */}
+          <div style={{
+            display: "flex", justifyContent: "center", flexWrap: "wrap",
+            gap: 0, marginTop: 28,
+            background: C.card, border: `1px solid ${C.border}`,
+            borderRadius: 14, overflow: "hidden", maxWidth: 680, margin: "28px auto 0",
+          }}>
+            {[
+              { l: "Receita Total", v: "R$ 2,29M" },
+              { l: "Transações", v: "1.600" },
+              { l: "Ticket Médio", v: "R$ 1.429" },
+              { l: "ROAS Search", v: "2,98×" },
+            ].map((s, i) => (
+              <div key={i} style={{
+                flex: "1 1 140px", padding: "18px 20px",
+                borderRight: i < 3 ? `1px solid ${C.border}` : "none",
+                textAlign: "center",
+              }}>
+                <div style={{ fontSize: 11, color: C.text3, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 6 }}>{s.l}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: "'JetBrains Mono',monospace" }}>{s.v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── TABS ── */}
+        <div className="fade-in-1" style={{
+          display: "flex", gap: 4, marginBottom: 40,
+          background: C.card, border: `1px solid ${C.border}`,
+          borderRadius: 14, padding: 5, overflowX: "auto",
+        }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} className="tab-btn" style={{
+              flex: "1 1 auto", padding: "9px 16px",
+              borderRadius: 10, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
+              color: tab === t.id ? C.bg0 : C.text3,
+              background: tab === t.id ? C.green : "transparent",
+              transition: "all .2s ease",
+              boxShadow: tab === t.id ? `0 0 20px rgba(0,255,178,0.25)` : "none",
+            }}>
+              {t.icon} {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ══════════ OVERVIEW ══════════ */}
+        {tab === "overview" && (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 16, marginBottom: 40 }}>
+              <KPI label="Receita Bruta" value="R$2,29M" sub="Período completo" color={C.green} sparkData={sparkKPI} trend={12} />
+              <KPI label="Vendas Totais" value="1.600" sub="Média: 51,6/dia" color={C.blue} sparkData={sparkKPI.map(v=>Math.min(v,100))} />
+              <KPI label="Ticket Médio" value="R$1.429" sub="Mediana: R$1.545" color={C.purple} sparkData={[1300,1350,1400,1450,1420,1500,1429]} />
+              <KPI label="Fat. Líquido" value="R$2,18M" sub="95,5% da receita" color={C.cyan} sparkData={[2100,2130,2150,2170,2180].map(v=>v/1000)} />
+            </div>
+
+            <Section icon="📦" title="Canais de Venda" subtitle="Orgânico lidera em volume · Ads e orgânico empatam no ticket" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 28 }}>
+              {channelData.map((c, i) => (
+                <div key={i} className="kpi-card" style={{
+                  background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: 14, padding: 22, position: "relative", overflow: "hidden",
+                }}>
+                  <div style={{
+                    position: "absolute", top: 0, left: 0, right: 0, height: 2,
+                    background: `linear-gradient(90deg, transparent, ${c.color}60, transparent)`,
+                  }} />
+                  <div style={{ fontSize: 13, fontWeight: 700, color: c.color, marginBottom: 18, display:"flex",alignItems:"center",gap:8 }}>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:c.color,boxShadow:`0 0 8px ${c.color}`}} />
+                    {c.canal}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                    {[
+                      { l: "Vendas", v: c.vendas.toLocaleString("pt-BR") },
+                      { l: "Receita", v: c.receita },
+                      { l: "Ticket", v: `R$${c.ticket.toLocaleString("pt-BR")}` },
+                    ].map((m, j) => (
+                      <div key={j}>
+                        <div style={{ fontSize: 10, color: C.text3, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{m.l}</div>
+                        <div style={{
+                          fontSize: 15, fontWeight: 700,
+                          fontFamily: "'JetBrains Mono',monospace",
+                          color: m.l === "Ticket" ? (c.ticket > 1400 ? C.green : C.amber) : C.text,
+                        }}>{m.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Tag type="insight">
+              <strong>O time comercial (SDR/closer) vende com ticket R$500 menor</strong> que Ads e Orgânico (R$1.038 vs R$1.533). O comercial usa ofertas intermediárias com desconto — avaliar se o volume justifica a margem menor.
+            </Tag>
+
+            <Section icon="💳" title="Formas de Pagamento" subtitle="67,7% parcelam em 12x — cartão domina com ticket 23% maior que Pix" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 28 }}>
+              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20 }}>
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={payData} dataKey="value" cx="50%" cy="50%" outerRadius={90} innerRadius={50} paddingAngle={3} strokeWidth={0}>
+                      {payData.map((_, i) => <Cell key={i} fill={PIE_C[i]} />)}
+                    </Pie>
+                    <Tooltip content={<Tooltip_ />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20 }}>
+                {payData.map((p, i) => (
+                  <div key={i} className="insight-row" style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "11px 8px", borderBottom: i < payData.length - 1 ? `1px solid ${C.border}` : "none",
+                    borderRadius: 6,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: 3, background: PIE_C[i] }} />
+                      <span style={{ fontSize: 13, color: C.text2 }}>{p.name}</span>
+                    </div>
+                    <div style={{ display:"flex", gap:12, alignItems:"center" }}>
+                      <span style={{ fontSize: 12, color: C.text3, fontFamily:"'JetBrains Mono',monospace" }}>{p.value.toLocaleString("pt-BR")}</span>
+                      <span style={{
+                        fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace",
+                        color: PIE_C[i], background: `${PIE_C[i]}15`, padding: "2px 8px", borderRadius: 6,
+                      }}>{p.pct}%</span>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ marginTop: 14, padding: "10px 12px", background: "rgba(0,255,178,0.05)", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12, color: C.text3 }}>
+                  Pix: ticket médio <strong style={{color:C.amber}}>R$1.224</strong> · Cartão: <strong style={{color:C.green}}>R$1.508</strong>
+                </div>
+              </div>
+            </div>
+
+            <Section icon="📍" title="Concentração Geográfica" subtitle="SP+RJ = 45,6% · DF sobre-representado (1,77× vs. população)" />
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 22 }}>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={stateData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                  <XAxis type="number" tick={{ fill: C.text3, fontSize: 11, fontFamily:"'JetBrains Mono',monospace" }} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="e" type="category" tick={{ fill: C.text, fontSize: 13, fontWeight:600 }} width={36} axisLine={false} tickLine={false} />
+                  <Tooltip content={<Tooltip_ />} cursor={{ fill: "rgba(0,255,178,0.04)" }} />
+                  <Bar dataKey="v" radius={[0, 8, 8, 0]} name="Vendas">
+                    {stateData.map((d, i) => (
+                      <Cell key={i} fill={i === 0 ? C.green : i === 1 ? C.blue : `${C.blue}60`} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════ TEMPORAL ══════════ */}
+        {tab === "temporal" && (
+          <div>
+            <Section icon="📅" title="Vendas por Dia da Semana" subtitle="Excluindo outlier 31/03 · Quarta lidera com 26,4% do volume" />
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 22, marginBottom: 24 }}>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={dowData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                  <XAxis dataKey="dia" tick={{ fill: C.text, fontSize: 13, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: C.text3, fontSize: 11, fontFamily:"'JetBrains Mono',monospace" }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<Tooltip_ />} cursor={{ fill: "rgba(0,255,178,0.04)" }} />
+                  <Bar dataKey="v" radius={[8, 8, 0, 0]} name="Vendas">
+                    {dowData.map((d, i) => (
+                      <Cell key={i}
+                        fill={d.dia === "Qua" ? C.green : d.dia === "Seg" ? C.blue : `${C.text3}40`}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
+              <Tag type="insight">
+                <strong>Quarta-feira (26,4%)</strong>, seguida de Segunda (18,2%). Nos dias normais, Seg–Qua concentram <strong>58%</strong> das vendas.
+              </Tag>
+              <Tag type="warning">
+                <strong>Fim de semana = apenas 17,5%.</strong> O público decide durante a semana — perfil CLT ou liberal que pesquisa no expediente.
+              </Tag>
+            </div>
+
+            <Section icon="⏰" title="Vendas por Hora" subtitle="Sem 31/03 — dois picos: manhã (10–11h) e noite (20–22h)" />
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 22, marginBottom: 24 }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={hourlyData}>
+                  <defs>
+                    <linearGradient id="hg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={C.green} stopOpacity={0.25} />
+                      <stop offset="100%" stopColor={C.green} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                  <XAxis dataKey="hora" tick={{ fill: C.text3, fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: C.text3, fontSize: 11, fontFamily:"'JetBrains Mono',monospace" }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<Tooltip_ />} cursor={{ stroke: `${C.green}40`, strokeWidth: 1 }} />
+                  <Area type="monotone" dataKey="v" stroke={C.green} fill="url(#hg)" strokeWidth={2} name="Vendas" dot={false} activeDot={{ r: 5, fill: C.green, stroke: C.bg0, strokeWidth: 2 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 24 }}>
+              {[
+                { icon:"🌅", label:"Pico Manhã", time:"9h – 11h", pct:"23,4%", desc:"Pesquisa no início do expediente", color: C.green },
+                { icon:"🌙", label:"Pico Noite", time:"20h – 22h", pct:"19,7%", desc:"Decisão em casa, pós-trabalho", color: C.purple },
+              ].map((p, i) => (
+                <div key={i} className="kpi-card" style={{
+                  background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 22,
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: p.color, marginBottom: 10, textTransform:"uppercase", letterSpacing:1 }}>
+                    {p.icon} {p.label} · {p.time}
+                  </div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: p.color, fontFamily:"'JetBrains Mono',monospace", lineHeight:1 }}>{p.pct}</div>
+                  <div style={{ fontSize: 13, color: C.text3, marginTop: 8 }}>{p.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            <Tag type="action">
+              <strong>Pico das 4h:</strong> 30 vendas às 4h da manhã indicam provável processamento batch de confirmações de pagamento (Pix/boleto) — não compras reais. Confirmar com Hotmart se há delay de notificação.
+            </Tag>
+          </div>
+        )}
+
+        {/* ══════════ PERFORMANCE ══════════ */}
+        {tab === "performance" && (
+          <div>
+            <Section icon="💥" title="O Evento — 31 de Março" subtitle="653 vendas em 1 dia · 40,8% de todo o período" />
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 22, marginBottom: 24 }}>
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={dailyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                  <XAxis dataKey="date" tick={{ fill: C.text3, fontSize: 9 }} angle={-45} textAnchor="end" height={52} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: C.text3, fontSize: 11, fontFamily:"'JetBrains Mono',monospace" }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<Tooltip_ />} cursor={{ fill: "rgba(0,255,178,0.04)" }} />
+                  <ReferenceLine y={653} stroke={`${C.red}40`} strokeDasharray="4 4" />
+                  <Bar dataKey="vendas" radius={[6, 6, 0, 0]} name="Vendas">
+                    {dailyData.map((d, i) => (
+                      <Cell key={i}
+                        fill={d.highlight ? C.red : d.vendas > 55 ? C.amber : `${C.blue}55`}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+              <KPI label="31/03 — Pico de Vendas" value="653" sub="455 vendas entre 21h–22h" color={C.red} trend={null} />
+              <KPI label="31/03 — Receita no Dia" value="R$989.737" sub="WD12 Vitalício: 546 vendas (83,6%)" color={C.amber} />
+            </div>
+
+            <Tag type="insight">
+              <strong>WD12 concentrou 83,6% das vendas do dia</strong>. 584 vendas sem SCK (orgânico/email/lista). O evento foi claramente um webinário ou live com fechamento de carrinho às 21h. Em menos de 60 minutos, metade de um mês normal.
+            </Tag>
+
+            <Section icon="📉" title="Curva de Decaimento Pós-Lançamento" subtitle="Queda clássica: –82% em 5 dias · Recuperação na semana seguinte" />
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 22, marginBottom: 24 }}>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={decayData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                  <XAxis dataKey="dia" tick={{ fill: C.text3, fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: C.text3, fontSize: 11, fontFamily:"'JetBrains Mono',monospace" }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<Tooltip_ />} cursor={{ stroke: `${C.amber}40`, strokeWidth: 1 }} />
+                  <Line type="monotone" dataKey="v" stroke={C.amber} strokeWidth={2.5} name="Vendas"
+                    dot={{ fill: C.amber, r: 4, stroke: C.bg0, strokeWidth: 2 }}
+                    activeDot={{ r: 6, fill: C.amber, stroke: C.bg0, strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 24 }}>
+              {[
+                { l: "Sem 1", v: 445, pct: "47%", hi: true },
+                { l: "Sem 2", v: 199, pct: "21%" },
+                { l: "Sem 3", v: 131, pct: "14%" },
+                { l: "Sem 4", v: 132, pct: "14%" },
+                { l: "Sem 5", v: 40,  pct: "4%" },
+              ].map((s, i) => (
+                <div key={i} className="kpi-card" style={{
+                  background: s.hi ? "rgba(0,255,178,0.07)" : C.card,
+                  border: `1px solid ${s.hi ? C.border2 : C.border}`,
+                  borderRadius: 12, padding: 14, textAlign: "center",
+                }}>
+                  <div style={{ fontSize: 10, color: C.text3, textTransform:"uppercase", letterSpacing:1 }}>{s.l}</div>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: s.hi ? C.green : C.text, marginTop: 6, fontFamily:"'JetBrains Mono',monospace" }}>{s.v}</div>
+                  <div style={{ fontSize: 11, color: s.hi ? C.green : C.text3 }}>{s.pct}</div>
+                </div>
+              ))}
+            </div>
+
+            <Tag type="warning">
+              <strong>Sem o lançamento, a média diária é 31,6 vendas.</strong> Este é o ritmo "evergreen" real da conta. Base sólida, mas todo o crescimento vem dos eventos.
+            </Tag>
+          </div>
+        )}
+
+        {/* ══════════ INSIGHTS ══════════ */}
+        {tab === "insights" && (
+          <div>
+            <Section icon="🎯" title="Perfil do Comprador" subtitle="O que os padrões revelam sobre quem compra" />
+
+            <Tag type="insight">
+              <strong>Perfil dominante: profissional CLT/liberal, 35–55 anos, Sudeste, renda média-alta.</strong> Evidências: (1) picos às 10–11h e 20–22h, (2) 67,7% parcelam em 12x, (3) 80% paga no cartão, (4) concentração em SP, RJ, MG, DF.
+            </Tag>
+            <Tag type="insight">
+              <strong>DF tem índice de penetração 1,77× acima do esperado.</strong> Servidores públicos/militares com renda estável e preocupação com o futuro financeiro. Segmento subexplorado.
+            </Tag>
+            <Tag type="insight">
+              <strong>O comprador decide rápido quando exposto à oferta certa.</strong> No dia 31/03, 455 vendas em menos de 60 minutos. A audiência aquecida + urgência = conversão imediata.
+            </Tag>
+
+            <Section icon="📊" title="Mídia Paga" subtitle="Cruzamento com campanhas Google Ads" />
+
+            <Tag type="action">
+              <strong>Google Search: ROAS 2,98 com 39 vendas.</strong> SCK "lp-im-google-ads-investidor" = 46 vendas. CPA R$475, ticket R$1.524. Melhor canal em eficiência — escalar com prioridade.
+            </Tag>
+            <Tag type="action">
+              <strong>Facebook/Meta domina volume:</strong> SCK "facebook-oferta" = 151 vendas, ticket R$1.533. Maior canal pago. Atenção: SCK "(none)" = 814 vendas provavelmente sem tracking correto.
+            </Tag>
+            <Tag type="warning">
+              <strong>YouTube ROAS geral 1,18 · CPA R$822.</strong> YouTube 540d Sudeste (ROAS 1,71) positivo. YouTube 7d Inscritos (ROAS 0,59) sangrando. Separar esses públicos urgente.
+            </Tag>
+            <Tag type="danger">
+              <strong>ALERTA: 814 vendas (50,9%) sem SCK rastreável.</strong> Metade das vendas com atribuição perdida. Prioridade máxima: auditar UTMs e SCKs em todas as campanhas ativas.
+            </Tag>
+
+            <Section icon="⏰" title="Recomendações de Horário" />
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${C.border}`, background: C.card2 }}>
+                    {["Canal","Horário Forte","Ação Recomendada"].map((h, i) => (
+                      <th key={i} style={{ textAlign: "left", padding: "12px 18px", fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: 1.2 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ["Google Search","8h – 12h","Aumentar lance +20% nessa faixa (pico de intenção)"],
+                    ["YouTube Ads","19h – 23h","Concentrar 60% do budget noturno (decisão em casa)"],
+                    ["Facebook/Meta","10–11h e 20–22h","Agendar entregas nos dois picos"],
+                    ["Remarketing","21h – 22h","Intensificar no horário de maior conversão"],
+                    ["Email / WhatsApp","Ter 20h ou Qua 10h","Enviar ofertas no pico semanal"],
+                  ].map((r, i) => (
+                    <tr key={i} className="insight-row" style={{ borderBottom: i < 4 ? `1px solid ${C.border}` : "none" }}>
+                      <td style={{ padding: "13px 18px", fontWeight: 600, color: C.green, fontSize: 13 }}>{r[0]}</td>
+                      <td style={{ padding: "13px 18px", fontSize: 13, fontFamily:"'JetBrains Mono',monospace", color: C.text }}>{r[1]}</td>
+                      <td style={{ padding: "13px 18px", fontSize: 13, color: C.text2 }}>{r[2]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════ PLANO DE AÇÃO ══════════ */}
+        {tab === "action" && (
+          <div>
+            <Section icon="🚀" title="Plano de Ação" subtitle="Priorizado por impacto · Execute na ordem abaixo" />
+
+            {[
+              {
+                p:"P0", color:C.red,
+                title:"Auditar tracking de SCK/UTMs",
+                what:"814 vendas sem rastreamento = decisões cegas. Revisar todas as campanhas e garantir que cada link tem SCK e SRC corretos.",
+                when:"Imediato — esta semana",
+                impact:"Atribuição correta → decisões de budget 50% mais precisas",
+              },
+              {
+                p:"P1", color:C.amber,
+                title:"Escalar Google Search: R$1.100 → R$1.500/dia",
+                what:"ROAS 2,98 — melhor canal. Aumentar 20% a cada 5 dias até R$1.500/dia. Focar em keywords de fundo de funil.",
+                when:"Próximos 15 dias",
+                impact:"Estimativa +10–13 vendas/dia com CPA ~R$475",
+              },
+              {
+                p:"P1", color:C.amber,
+                title:"Pausar YouTube 7d Inscritos e realocar budget",
+                what:"ROAS 0,59, CPA R$2.508. Prejuízo em 2 vendas. Mover R$100/dia para Rmkt Ads 90D (ROAS 2,02).",
+                when:"Imediato",
+                impact:"Eliminar prejuízo + alimentar campanha lucrativa",
+              },
+              {
+                p:"P2", color:C.blue,
+                title:"Criar 4 públicos Custom Intent para YouTube",
+                what:"Testar CI fundo de funil, CI dor financeira, CI concorrentes (URLs), CI aposentadoria. R$150/dia cada.",
+                when:"7 dias config · 14 dias rodar",
+                impact:"Novos bolsões de público para escalar YouTube acima de ROAS 1,71",
+              },
+              {
+                p:"P2", color:C.blue,
+                title:"Implementar day-parting agressivo",
+                what:"Lances +25% entre 9–11h e 20–22h. Reduzir –40% entre 1–6h. Aplicar em Google + Meta.",
+                when:"Próxima semana",
+                impact:"Mesmo budget, mais conversões nos horários de pico",
+              },
+              {
+                p:"P3", color:C.purple,
+                title:"Campanha DF / servidores públicos",
+                what:"DF com penetração 1,77× — criar campanha específica para servidores/militares preocupados com aposentadoria.",
+                when:"Próximas 2 semanas",
+                impact:"Nicho subexplorado com alta propensão de compra",
+              },
+              {
+                p:"P3", color:C.purple,
+                title:"Preparar próximo evento de lançamento",
+                what:"31/03 gerou R$990k em 1 dia. Planejar: remarketing 30 dias antes, sequência de aquecimento, carrinho estruturado (abertura 21h, fechamento 72h).",
+                when:"Planejar agora · executar em 30–45 dias",
+                impact:"Potencial R$500k–1M em receita concentrada",
+              },
+            ].map((item, i) => (
+              <div key={i} className="action-item" style={{
+                background: C.card, border: `1px solid rgba(255,255,255,0.06)`,
+                borderLeft: `3px solid ${item.color}`,
+                borderRadius: 14, padding: "18px 22px", marginBottom: 12,
+                display: "grid", gridTemplateColumns: "auto 1fr", gap: 18, alignItems: "start",
+              }}>
+                <div style={{ paddingTop: 2 }}>
+                  <span style={{
+                    display: "block", background: `${item.color}20`, color: item.color,
+                    padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+                    textAlign: "center", border: `1px solid ${item.color}40`,
+                    fontFamily:"'JetBrains Mono',monospace", letterSpacing:0.5,
+                  }}>{item.p}</span>
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 10 }}>{item.title}</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                    {[
+                      { l: "O quê", v: item.what },
+                      { l: "Quando", v: item.when },
+                      { l: "Impacto", v: item.impact },
+                    ].map((d, j) => (
+                      <div key={j}>
+                        <div style={{ fontSize: 10, color: C.text3, textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>{d.l}</div>
+                        <div style={{ fontSize: 13, color: j === 2 ? item.color : C.text2, lineHeight: 1.5 }}>{d.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <div style={{
+              marginTop: 32, background: "linear-gradient(135deg, rgba(0,255,178,0.07), rgba(59,139,255,0.05))",
+              border: `1px solid ${C.border2}`, borderRadius: 16, padding: "28px 30px",
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.green, marginBottom: 18, textTransform:"uppercase", letterSpacing:1.5 }}>
+                ◆ RESUMO EXECUTIVO
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 6, fontSize: 13, color: C.text2, lineHeight: 2 }}>
+                {[
+                  "1.600 vendas em 31 dias","Receita: R$2,29M",
+                  "Ticket médio: R$1.429","67,7% parcelam em 12×",
+                  "Pico: Qua + Seg (58% vendas)","Horários: 10–11h e 20–22h",
+                  "SP + RJ = 45,6% do volume","50,9% sem tracking (corrigir!)",
+                  "Search ROAS 2,98 → escalar","YouTube 7d → pausar (ROAS 0,59)",
+                  "Evento 31/03: R$990k em 1 dia","Média diária evergreen: 31,6",
+                ].map((s, i) => (
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ width:5, height:5, borderRadius:"50%", background: i%3===0 ? C.green : i%3===1 ? C.blue : C.purple, flexShrink:0 }} />
+                    {s}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
 }
-
-let pages='';
-
-// OVERVIEW
-pages+='<div class="page active" id="p-overview"><div class="grid4">'+kpi("Vendas ("+mensal.length+" meses)",totV.toLocaleString("pt-BR"),"Investido: "+fK(totI))+kpi("Lucro Bruto",fK(totL),"Comissão: "+fK(totC),"#4d8eff")+kpi("ROAS Geral",roasG.toFixed(2),"CPA: "+fR(totV>0?totI/totV:0),"#a47cff")+kpi("Vendas 2026",v26.toLocaleString("pt-BR"),"Lucro: "+fK(l26),"#2ee5c9")+'</div>'+sec("📈","Evolução Mensal","Vendas, Lucro e ROAS")+'<div class="card"><canvas id="ch-evo"></canvas></div>'+sec("💰","Lucro Acumulado")+'<div class="card"><canvas id="ch-acum"></canvas></div>'+sec("🏆","Comparativo 2026")+'<div class="comp" style="grid-template-columns:repeat('+m26.length+',1fr)">'+m26.map((d,i)=>'<div style="background:#111a2e;border:1px solid #1a2744;border-radius:14px;padding:16px;text-align:center"><div style="font-size:11px;font-weight:700;color:'+cols[i%10]+';margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">'+d.m.split("/")[0]+'</div><div style="font-size:28px;font-weight:900">'+d.v+'</div><div style="font-size:10px;color:#4a5d80">vendas</div><div style="margin-top:8px;font-size:20px;font-weight:800;color:'+rc(d.roas)+'">'+d.roas.toFixed(2)+'</div><div style="font-size:9px;color:#4a5d80">ROAS</div><div style="margin-top:6px;font-size:10px;color:#8899b4">Lucro: '+fK(d.lu)+'</div></div>').join('')+'</div></div>';
-
-// MESES INDIVIDUAIS
-meses26.forEach(mes=>{
-  const cp=campanhas.filter(r=>r.mes===mes);
-  const md=getMesData(mes);
-  const win=cp.filter(r=>r.roas>=2&&r.v>=3);
-  const lose=cp.filter(r=>r.roas>0&&r.roas<1&&r.v>0);
-  const paused=cp.filter(r=>r.v===0&&r.cu>0);
-  const cid="ch-"+mes.replace(/[^a-zA-Z0-9]/g,"");
-  const adData=getAdPerf(mes);
-  pages+='<div class="page" id="p-'+mes+'"><div class="grid4">'+kpi("Vendas",md.v.toString(),"CPA: "+fR(md.cpa))+kpi("ROAS",md.roas.toFixed(2),"Investido: "+fK(md.inv),"#4d8eff")+kpi("Lucro",fK(md.lu),"Comissão: "+fK(md.com),"#00e599")+kpi("Campanhas",cp.length.toString(),win.length+" venc · "+lose.length+" perd","#a47cff")+'</div>'+campTable(cp,"Campanhas — "+mes)+(win.length?box("i","🧠 <strong>Vencedoras:</strong> "+win.map(w=>w.c+" ("+w.roas.toFixed(2)+")").join(" · ")):"")+(lose.length?box("d","🔴 <strong>Prejuízo:</strong> "+lose.map(l=>l.c+" ("+l.roas.toFixed(2)+", "+fK(l.lu)+")").join(" · ")):"")+(paused.length?box("w","⚠️ <strong>Pausadas:</strong> "+paused.map(p=>p.c+" ("+fK(p.cu)+")").join(" · ")):"")+(cp.filter(r=>r.v>0).length>1?'<div class="card"><canvas id="'+cid+'"></canvas></div>':'')+adTable(adData)+'</div>';
-});
-
-// TIPOS
-let tt='<div class="card"><table><thead><tr><th style="text-align:left">Tipo</th><th>Vendas</th><th>Custo</th><th>Comissão</th><th>Lucro</th><th>ROAS</th></tr></thead><tbody>';
-tipoArr.forEach((r,i)=>{tt+='<tr><td style="color:'+cols[i%10]+';font-weight:700">'+r.t+'</td><td style="font-weight:700">'+r.v+'</td><td style="color:#8899b4">'+fK(r.cu)+'</td><td style="color:#8899b4">'+fK(r.co)+'</td><td style="font-weight:700;color:'+lc(r.lu)+'">'+fK(r.lu)+'</td><td style="font-weight:800;color:'+rc(r.roas)+';font-size:13px">'+r.roas.toFixed(2)+'</td></tr>'});
-tt+='</tbody></table></div>';
-pages+='<div class="page" id="p-tipos">'+sec("📊","Por Tipo de Campanha","Agregado completo")+'<div class="card"><canvas id="ch-tipos"></canvas></div>'+tt+'</div>';
-
-// GEO
-pages+='<div class="page" id="p-geo">'+sec("📍","Vendas por Estado",vendas.length+" vendas rastreadas")+'<div class="grid2"><div class="card"><canvas id="ch-geo"></canvas></div><div class="card"><div style="font-size:12px;font-weight:700;margin-bottom:12px">Por Região</div><canvas id="ch-reg" style="max-height:200px"></canvas></div></div><div class="card">'+geoArr.map((r,i)=>'<div style="display:flex;align-items:center;gap:10px;padding:5px 0"><span style="width:24px;font-size:11px;font-weight:700;color:'+cols[i%10]+'">'+r.e+'</span><div style="flex:1;height:6px;background:#1a2744;border-radius:3px;overflow:hidden"><div style="width:'+(geoArr[0]&&geoArr[0].v>0?(r.v/geoArr[0].v*100):0)+'%;height:100%;background:'+cols[i%10]+';border-radius:3px"></div></div><span style="font-size:11px;font-weight:600;min-width:28px;text-align:right">'+r.v+'</span></div>').join('')+'</div></div>';
-
-// RENDER
-document.getElementById("app").innerHTML='<div class="header"><div class="badge">Google Ads Analytics · Live</div><h1>Investidor Mestre <span>3.0</span></h1><p class="subtitle">'+mensal.length+' meses · '+totV+' vendas · '+vendas.length+' rastreadas</p><div class="meta"><span>Atualizado: '+new Date().toLocaleString("pt-BR")+'</span><button onclick="location.reload()">↻ Atualizar</button></div></div><div class="tabs">'+tabs.map(t=>'<button class="tab'+(t.id==="overview"?" active":"")+'" data-id="'+t.id+'">'+t.l+'</button>').join('')+'</div><div id="pages">'+pages+'</div><div class="footer"><div>Dashboard Investidor Mestre 3.0 · Dados da planilha Google Sheets</div></div>';
-
-document.querySelectorAll(".tab").forEach(btn=>{btn.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));btn.classList.add("active");document.getElementById("p-"+btn.dataset.id).classList.add("active");currentTab=btn.dataset.id;renderCharts()})});
-
-function renderCharts(){Object.values(charts).forEach(c=>{if(c&&c.destroy)c.destroy()});charts={};const id=currentTab;
-if(id==="overview"){
-  charts.evo=new Chart(document.getElementById("ch-evo"),{type:"bar",data:{labels:mensal.map(r=>r.m),datasets:[{label:"Vendas",data:mensal.map(r=>r.v),backgroundColor:"rgba(77,142,255,.5)",borderRadius:4,order:2,yAxisID:"y"},{label:"Lucro",data:mensal.map(r=>r.lu),type:"line",borderColor:"#00e599",backgroundColor:"rgba(0,229,153,.1)",fill:true,tension:.3,order:1,yAxisID:"y"},{label:"ROAS",data:mensal.map(r=>r.roas),type:"line",borderColor:"#ffbe2e",borderWidth:2.5,pointBackgroundColor:"#ffbe2e",pointRadius:4,fill:false,order:0,yAxisID:"y1"}]},options:{responsive:true,interaction:{mode:"index"},scales:{y:{position:"left",grid:{color:"#1a274440"}},y1:{position:"right",min:0,max:3.5,grid:{display:false}}}}});
-  charts.acum=new Chart(document.getElementById("ch-acum"),{type:"line",data:{labels:mensal.map(r=>r.m),datasets:[{label:"Lucro Acumulado",data:acumArr,borderColor:"#2ee5c9",backgroundColor:"rgba(46,229,201,.1)",fill:true,tension:.3,pointRadius:3}]},options:{responsive:true,scales:{y:{grid:{color:"#1a274440"},ticks:{callback:v=>(v/1000).toFixed(0)+"k"}}}}});
-}
-if(meses26.includes(id)){const cp=campanhas.filter(r=>r.mes===id&&r.v>0).sort((a,b)=>b.v-a.v);if(cp.length>1){const cid="ch-"+id.replace(/[^a-zA-Z0-9]/g,"");const el=document.getElementById(cid);if(el)charts.mes=new Chart(el,{type:"bar",data:{labels:cp.map(r=>r.c),datasets:[{label:"Vendas",data:cp.map(r=>r.v),backgroundColor:"rgba(77,142,255,.6)",borderRadius:4},{label:"Lucro",data:cp.map(r=>r.lu),backgroundColor:cp.map(r=>r.lu>=0?"rgba(0,229,153,.5)":"rgba(255,77,106,.5)"),borderRadius:4}]},options:{responsive:true,indexAxis:"y",scales:{x:{grid:{color:"#1a274440"}}}}})}}
-if(id==="tipos"){charts.tipos=new Chart(document.getElementById("ch-tipos"),{type:"bar",data:{labels:tipoArr.map(r=>r.t),datasets:[{label:"Vendas",data:tipoArr.map(r=>r.v),backgroundColor:"rgba(77,142,255,.6)",borderRadius:4},{label:"Lucro",data:tipoArr.map(r=>r.lu),backgroundColor:tipoArr.map(r=>r.lu>=0?"rgba(0,229,153,.5)":"rgba(255,77,106,.5)"),borderRadius:4}]},options:{responsive:true,scales:{y:{grid:{color:"#1a274440"}}}}});}
-if(id==="geo"){charts.geo=new Chart(document.getElementById("ch-geo"),{type:"bar",data:{labels:geoArr.map(r=>r.e),datasets:[{label:"Vendas",data:geoArr.map(r=>r.v),backgroundColor:geoArr.map((_,i)=>cols[i%10]+"90"),borderRadius:4}]},options:{responsive:true,indexAxis:"y",scales:{x:{grid:{color:"#1a274440"}}}}});if(regArr.length)charts.reg=new Chart(document.getElementById("ch-reg"),{type:"doughnut",data:{labels:regArr.map(r=>r.n),datasets:[{data:regArr.map(r=>r.v),backgroundColor:regArr.map((_,i)=>cols[i%10]),borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{padding:12,font:{size:10}}}}}});}
-}renderCharts()}
-fetchData();
-</script>
-</body>
-</html>
